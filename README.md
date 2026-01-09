@@ -18,10 +18,11 @@ pkg install tsu lua54
 # Устанавливаем LuaRocks (менеджер пакетов Lua) если его нет, или ставим пакеты вручную.
 # Но в Termux часто проще скачать готовые so файлы или использовать luarocks.
 pkg install luarocks
+pkg install curl
 luarocks install luasocket
 luarocks install lua-cjson
 ```
-*Если возникают ошибки с компиляцией cjson/socket, поищите готовые пакеты для Termux: `pkg install lua-cjson` (может не быть в основном репо, тогда придется билдить).*
+*Если возникают ошибки ssl или socket, скрипт автоматически переключится на curl.*
 
 ### 2. Установка скриптов
 1. Создайте папку для бота, например `roblox_manager`.

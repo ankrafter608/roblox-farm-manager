@@ -145,38 +145,61 @@ local function restart_roblox(reason)
     state.isBooting = true
 end
 
+local function parse_presence_response(response_text)
+    local success, data = pcall(json.decode, response_text)
+    if success and data and data.userPresences and data.userPresences[1] then
+        local p = data.userPresences[1]
+        -- 0=Offline, 1=Online, 2=InGame, 3=Studio
+        if p.userPresenceType == 2 then
+            return true, "InGame"
+        elseif p.userPresenceType == 1 then
+            return false, "Online (Not InGame)"
+        else
+            return false, "Offline"
+        end
+    end
+    return false, "API/Parse Error"
+end
+
 local function check_roblox_api()
     local url = "https://presence.roblox.com/v1/presence/users"
-    local body = json.encode({userIds = {tonumber(config.userId)}})
-    local response_body = {}
+    local body_json = json.encode({userIds = {tonumber(config.userId)}})
     
-    local res, code = http.request({
-        url = url,
-        method = "POST",
-        headers = {
-            ["Content-Type"] = "application/json",
-            ["Content-Length"] = tostring(#body)
-        },
-        source = ltn12.source.string(body),
-        sink = ltn12.sink.table(response_body)
-    })
-    
-    if code == 200 then
-        local data = json.decode(table.concat(response_body))
-        if data.userPresences and data.userPresences[1] then
-            local p = data.userPresences[1]
-            -- 0=Offline, 1=Online, 2=InGame, 3=Studio
-            if p.userPresenceType == 2 then
-                -- Check place ID if strict
-                return true, "InGame"
-            elseif p.userPresenceType == 1 then
-                return false, "Online (Not InGame)"
-            else
-                return false, "Offline"
+    -- Проверяем наличие SSL. Если нет - используем cURL (есть почти везде в Termux)
+    local ssl_avail = pcall(require, "ssl")
+
+    if ssl_avail then
+        -- Используем LuaSocket + LuaSec
+        local response_body = {}
+        local res, code = http.request({
+            url = url,
+            method = "POST",
+            headers = {
+                ["Content-Type"] = "application/json",
+                ["Content-Length"] = tostring(#body_json)
+            },
+            source = ltn12.source.string(body_json),
+            sink = ltn12.sink.table(response_body)
+        })
+        
+        if code == 200 then
+            return parse_presence_response(table.concat(response_body))
+        end
+    else
+        -- Fallback: Используем системный curl
+        -- Экранируем кавычки для shell команд (простой вариант для json без спецсимволов)
+        local cmd = string.format("curl -s -X POST -H 'Content-Type: application/json' -d '%s' '%s'", body_json, url)
+        local handle = io.popen(cmd)
+        if handle then
+            local result = handle:read("*a")
+            handle:close()
+            if result and result ~= "" then
+                 return parse_presence_response(result)
             end
         end
     end
-    return false, "API Error"
+    
+    return false, "Connection Error"
 end
 
 -- [[ Dashboard ]]
