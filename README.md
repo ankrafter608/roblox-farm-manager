@@ -39,12 +39,13 @@ luarocks install lua-cjson
 
 ## Запуск
 1. Запустите Termux.
-2. Перейдите в папку со скриптом.
-3. Запустите:
+2. Перейдите в режим root и затем в папку (tsu часто сбрасывает путь, поэтому переходим после входа):
 ```bash
 tsu
-lua54 manager.lua
+cd /data/data/com.termux/files/home/roblox-farm-manager/src
+lua5.4 manager.lua
 ```
+*(Если `lua5.4` не найдена, попробуйте просто `lua`)*
 
 ## Использование
 После запуска вы увидите интерактивное меню:
