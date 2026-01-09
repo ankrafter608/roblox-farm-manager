@@ -1,0 +1,8 @@
+# User settings
+settings.json
+*.log
+tmp/
+
+# System
+.DS_Store
+Thumbs.db
